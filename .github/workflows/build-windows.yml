@@ -12,22 +12,20 @@ jobs:
   build:
     runs-on: windows-latest
     env:
-      # slider_io uses #![feature] flags, and its dependency ntapi 0.3 no longer
-      # compiles on Rust 1.69+, so build with Rust 1.62 and allow feature flags.
+      # slider_io and the app use #![feature] flags; allow them on stable Rust.
       RUSTC_BOOTSTRAP: "1"
-      CARGO_NET_GIT_FETCH_WITH_CLI: "true"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 18
           cache: yarn
 
-      - name: Install Rust 1.62
+      - name: Install Rust
         run: |
-          rustup toolchain install 1.62 --profile minimal
-          rustup default 1.62
+          rustup toolchain install stable --profile minimal
+          rustup default stable
           rustc --version
 
       - name: Install JS dependencies

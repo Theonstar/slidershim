@@ -1,0 +1,43 @@
+name: Build Windows installer
+
+on:
+  push:
+    branches: [main, iidx-layout]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      # slider_io uses #![feature] flags, and its dependency ntapi 0.3 no longer
+      # compiles on Rust 1.69+, so build with Rust 1.62 and allow feature flags.
+      RUSTC_BOOTSTRAP: "1"
+      CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: yarn
+
+      - name: Install Rust 1.62
+        run: |
+          rustup toolchain install 1.62 --profile minimal
+          rustup default 1.62
+          rustc --version
+
+      - name: Install JS dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build
+        run: yarn tauri build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: slidershim-installer
+          path: src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: error

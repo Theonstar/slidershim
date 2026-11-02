@@ -126,6 +126,25 @@ const VOLTEX_KB_MAP_NEARDAYO: [usize; 41] = [
   0x31, 0x0d, 0x1b, // 1, VK_RETURN, VK_ESCAPE
 ];
 
+/// IIDX layout, meant for the `brokenithm-iidx` web controller, which writes
+/// each IIDX button to a fixed ground pad index instead of a physical slider
+/// position:
+///   0 = turntable up, 1 = turntable down, 2..=8 = keys 1-7,
+///   9 = START, 10 = EFFECT, 11 = VEFX, 12..=31 unused.
+/// Modifier keys are avoided on purpose so Ctrl+Z/C/V style shortcuts never
+/// fire. Rebind these in the game's own config (e.g. spicecfg).
+#[rustfmt::skip]
+const IIDX_KB_MAP: [usize; 41] = [
+  0x51 /* Q (TT up) */, 0x41 /* A (TT down) */,
+  0x5a /* Z (1) */, 0x53 /* S (2) */, 0x58 /* X (3) */, 0x44 /* D (4) */,
+  0x43 /* C (5) */, 0x46 /* F (6) */, 0x56 /* V (7) */,
+  0x31 /* 1 (START) */, 0x32 /* 2 (EFFECT) */, 0x33 /* 3 (VEFX) */,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Disabled
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Disabled
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Air, disabled
+  0x0d, 0x20, 0x1b, // VK_RETURN, VK_SPACE, VK_ESCAPE
+];
+
 pub struct KeyboardOutput {
   input_to_idx: [usize; 41],
   key_idx_to_keycode: [u16; 41],
@@ -156,6 +175,7 @@ impl KeyboardOutput {
       KeyboardLayout::FourK => &FOUR_K_MAP,
       KeyboardLayout::Voltex => &VOLTEX_KB_MAP,
       KeyboardLayout::Neardayo => &VOLTEX_KB_MAP_NEARDAYO,
+      KeyboardLayout::Iidx => &IIDX_KB_MAP,
     };
 
     let mut input_to_key_idx = [0 as usize; 41];

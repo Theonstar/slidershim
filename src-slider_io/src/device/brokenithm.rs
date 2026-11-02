@@ -39,6 +39,7 @@ static BROKENITHM_STR_FILES: phf::Map<&'static str, (&'static str, &'static str)
   "index-ns.html" => (include_str!("./brokenithm-www/index-ns.html"), "text/html"),
   "index-go.html" => (include_str!("./brokenithm-www/index-go.html"), "text/html"),
   "index.html" => (include_str!("./brokenithm-www/index.html"), "text/html"),
+  "index-iidx.html" => (include_str!("./brokenithm-www/index-iidx.html"), "text/html"),
 };
 
 static BROKENITHM_BIN_FILES: phf::Map<&'static str, (&'static [u8], &'static str)> = phf_map! {
@@ -257,6 +258,7 @@ async fn handle_request(
       BrokenithmSpec::Basic => serve_file("index.html").await,
       BrokenithmSpec::GroundOnly => serve_file("index-go.html").await,
       BrokenithmSpec::Nostalgia => serve_file("index-ns.html").await,
+      BrokenithmSpec::Iidx => serve_file("index-iidx.html").await,
     },
     (filename, false) => serve_file(&filename[1..]).await,
     ("/ws", true) => handle_websocket(request, state, lights_enabled).await,

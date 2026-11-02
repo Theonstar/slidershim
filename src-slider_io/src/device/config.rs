@@ -15,6 +15,7 @@ pub enum BrokenithmSpec {
   Basic,
   GroundOnly,
   Nostalgia,
+  Iidx,
 }
 
 #[derive(Debug, Clone)]
@@ -89,6 +90,13 @@ impl DeviceMode {
       },
       "brokenithm-nostalgia" => DeviceMode::Brokenithm {
         spec: BrokenithmSpec::Nostalgia,
+        lights_enabled: false,
+        port: u16::try_from(v["brokenithmPort"].as_i64()?)
+          .ok()
+          .or(Some(1606))?,
+      },
+      "brokenithm-iidx" => DeviceMode::Brokenithm {
+        spec: BrokenithmSpec::Iidx,
         lights_enabled: false,
         port: u16::try_from(v["brokenithmPort"].as_i64()?)
           .ok()

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>slidershim-iidx</title>
+    <meta charset="utf8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon.png" />
+    <style>
+      * {
+        box-sizing: border-box;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        color: #ddd;
+        font-family: -apple-system, system-ui, sans-serif;
+        touch-action: none;
+        overscroll-behavior: none;
+      }
+
+      #root {
+        position: fixed;
+        inset: 0;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right)
+          env(safe-area-inset-bottom) env(safe-area-inset-left);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      /* Top bar: system buttons and status */
+      #bar {
+        flex: 0 0 64px;
+        display: flex;
+        gap: 8px;
+        padding: 8px 8px 0;
+        align-items: stretch;
+      }
+
+      #bar .sys {
+        flex: 0 0 110px;
+        border-radius: 8px;
+        background: #222;
+        border: 1px solid #444;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+      }
+
+      #bar .spacer {
+        flex: 1;
+      }
+
+      #status {
+        align-self: center;
+        font-size: 13px;
+        padding: 0 8px;
+      }
+
+      #status.ok {
+        color: #6c6;
+      }
+
+      #status.bad {
+        color: #e66;
+      }
+
+      #bar .tool {
+        flex: 0 0 64px;
+        border-radius: 8px;
+        background: #111;
+        border: 1px solid #333;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+      }
+
+      /* Main play area */
+      #play {
+        flex: 1;
+        display: flex;
+        gap: 12px;
+        padding: 0 8px 8px;
+        min-height: 0;
+      }
+
+      #play.p2 {
+        flex-direction: row-reverse;
+      }
+
+      #tt {
+        flex: 0 0 var(--tt-size, 38%);
+        border-radius: 50%;
+        align-self: center;
+        aspect-ratio: 1 / 1;
+        max-height: 100%;
+        background: radial-gradient(circle, #333 0 12%, #181818 13% 60%, #222 61% 100%);
+        border: 3px solid #555;
+        position: relative;
+      }
+
+      #tt::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 4%;
+        width: 4px;
+        height: 18%;
+        margin-left: -2px;
+        background: #777;
+        border-radius: 2px;
+        transform-origin: 50% 255%;
+        transform: rotate(var(--tt-angle, 0deg));
+      }
+
+      #tt.up {
+        border-color: #4af;
+        box-shadow: 0 0 24px #4af8;
+      }
+
+      #tt.down {
+        border-color: #f84;
+        box-shadow: 0 0 24px #f848;
+      }
+
+      /* Keys: 8 half-columns, white keys on the bottom row,
+         black keys on the top row offset by half a key */
+      #keys {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        grid-template-rows: 1fr 1fr;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .key {
+        border-radius: 10px;
+        border: 2px solid #666;
+      }
+
+      .white {
+        grid-row: 2;
+        background: #e8e8e8;
+      }
+
+      .black {
+        grid-row: 1;
+        background: #1c1c1c;
+      }
+
+      .key.on,
+      .sys.on {
+        background: #f33 !important;
+        border-color: #f99;
+      }
+
+      /* Settings panel */
+      #settings {
+        position: fixed;
+        top: 80px;
+        right: 16px;
+        width: 300px;
+        padding: 16px;
+        background: #1a1a1a;
+        border: 1px solid #444;
+        border-radius: 10px;
+        display: none;
+        flex-direction: column;
+        gap: 14px;
+        font-size: 15px;
+        z-index: 10;
+      }
+
+      #settings.open {
+        display: flex;
+      }
+
+      #settings label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      #settings input[type="range"] {
+        width: 100%;
+      }
+
+      #settings .row {
+        display: flex;
+        gap: 8px;
+      }
+
+      #settings button {
+        flex: 1;
+        padding: 10px;
+        font-size: 15px;
+        border-radius: 6px;
+        border: 1px solid #555;
+        background: #2a2a2a;
+        color: #ddd;
+      }
+
+      #settings button.sel {
+        background: #357;
+        border-color: #59c;
+      }
+
+      #settings .hint {
+        font-size: 12px;
+        color: #999;
+        line-height: 1.4;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div id="bar">
+        <div class="sys" data-idx="9">START</div>
+        <div class="sys" data-idx="10">EFFECT</div>
+        <div class="sys" data-idx="11">VEFX</div>
+        <div class="spacer"></div>
+        <div id="status" class="bad">연결 중…</div>
+        <div class="tool" id="gear">설정</div>
+      </div>
+      <div id="play">
+        <div id="tt"></div>
+        <div id="keys">
+          <!-- grid-column: start / span 2 on an 8 half-column grid -->
+          <div class="key white" data-idx="2" style="grid-column: 1 / span 2"></div>
+          <div class="key black" data-idx="3" style="grid-column: 2 / span 2"></div>
+          <div class="key white" data-idx="4" style="grid-column: 3 / span 2"></div>
+          <div class="key black" data-idx="5" style="grid-column: 4 / span 2"></div>
+          <div class="key white" data-idx="6" style="grid-column: 5 / span 2"></div>
+          <div class="key black" data-idx="7" style="grid-column: 6 / span 2"></div>
+          <div class="key white" data-idx="8" style="grid-column: 7 / span 2"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="settings">
+      <div>
+        <div style="margin-bottom: 6px">사이드</div>
+        <div class="row">
+          <button id="side1">1P (턴테이블 왼쪽)</button>
+          <button id="side2">2P (턴테이블 오른쪽)</button>
+        </div>
+      </div>
+      <label>
+        <span>턴테이블 크기 <span id="ttSizeVal"></span></span>
+        <input type="range" id="ttSize" min="20" max="55" step="1" />
+      </label>
+      <label>
+        <span>스크래치 방향 전환 감도 <span id="ttThreshVal"></span></span>
+        <input type="range" id="ttThresh" min="2" max="30" step="1" />
+      </label>
+      <div class="hint">
+        턴테이블은 누르는 순간 위 방향(TT up)이 눌리고, 손가락을 돌리거나 문지르는 방향이 바뀌면
+        반대 방향 키로 바뀝니다. 손을 떼면 놓입니다. 감도 값은 방향을 바꾸는 데 필요한 이동 거리(px)이며,
+        작을수록 민감합니다.
+      </div>
+      <div class="row"><button id="closeSettings">닫기</button></div>
+    </div>
+
+    <script>
+      "use strict";
+
+      // Pad indices understood by the slidershim "Keyboard IIDX" output layout.
+      const IDX_TT_UP = 0;
+      const IDX_TT_DOWN = 1;
+      const N_GROUND = 32;
+      const N_AIR = 6;
+
+      // ---- Settings (per device, browser storage is best-effort only) ----
+      const settings = { side: 1, ttSize: 38, ttThresh: 8 };
+      try {
+        Object.assign(settings, JSON.parse(localStorage.getItem("iidx-settings") || "{}"));
+      } catch (e) {}
+      const saveSettings = () => {
+        try {
+          localStorage.setItem("iidx-settings", JSON.stringify(settings));
+        } catch (e) {}
+      };
+
+      const $ = (id) => document.getElementById(id);
+      const play = $("play");
+      const tt = $("tt");
+
+      const applySettings = () => {
+        play.classList.toggle("p2", settings.side === 2);
+        $("side1").classList.toggle("sel", settings.side === 1);
+        $("side2").classList.toggle("sel", settings.side === 2);
+        document.documentElement.style.setProperty("--tt-size", settings.ttSize + "%");
+        $("ttSize").value = settings.ttSize;
+        $("ttSizeVal").textContent = settings.ttSize + "%";
+        $("ttThresh").value = settings.ttThresh;
+        $("ttThreshVal").textContent = settings.ttThresh + "px";
+      };
+      applySettings();
+
+      $("side1").addEventListener("click", () => { settings.side = 1; saveSettings(); applySettings(); });
+      $("side2").addEventListener("click", () => { settings.side = 2; saveSettings(); applySettings(); });
+      $("ttSize").addEventListener("input", (e) => { settings.ttSize = +e.target.value; saveSettings(); applySettings(); });
+      $("ttThresh").addEventListener("input", (e) => { settings.ttThresh = +e.target.value; saveSettings(); applySettings(); });
+      $("closeSettings").addEventListener("click", () => $("settings").classList.remove("open"));
+
+      // ---- Touch handling ----
+      // Touches that start on the turntable stay owned by it until lifted, so
+      // a scratch can travel outside the disc without hitting keys.
+      const ttTouches = new Map(); // identifier -> { x, y, acc, dir }
+      let ttAngle = 0;
+
+      const ttCenter = () => {
+        const r = tt.getBoundingClientRect();
+        return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, rad: r.width / 2 };
+      };
+
+      // Signed motion along the rotation of the disc. Positive = clockwise.
+      // Near the center rotation is ill-defined, so vertical motion is used.
+      const ttMotion = (t, nx, ny) => {
+        const { cx, cy, rad } = ttCenter();
+        const dx = nx - t.x;
+        const dy = ny - t.y;
+        const rx = t.x - cx;
+        const ry = t.y - cy;
+        const r = Math.hypot(rx, ry);
+        if (r < rad * 0.2) return -dy;
+        return (rx * dy - ry * dx) / r;
+      };
+
+      const state = new Array(N_GROUND).fill(0);
+      let lastSent = "";
+
+      const isMenuTarget = (el) => el && (el.closest("#settings") || el.id === "gear");
+
+      const handleTouches = (e) => {
+        const target = e.target;
+        // Let the settings panel and gear button behave like normal web UI
+        if (isMenuTarget(target)) return;
+        e.preventDefault();
+
+        // Update turntable-owned touches
+        const active = new Set();
+        for (const touch of e.touches) {
+          active.add(touch.identifier);
+          let t = ttTouches.get(touch.identifier);
+          if (!t && e.type === "touchstart") {
+            const el = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (el === tt) {
+              t = { x: touch.clientX, y: touch.clientY, acc: 0, dir: IDX_TT_UP };
+              ttTouches.set(touch.identifier, t);
+            }
+          }
+          if (t) {
+            const m = ttMotion(t, touch.clientX, touch.clientY);
+            ttAngle += m * 0.6;
+            // Accumulate motion in the direction opposite to the current one;
+            // flip once it passes the threshold. Motion in the current
+            // direction resets the accumulator.
+            const opposing = t.dir === IDX_TT_UP ? m > 0 : m < 0;
+            if (opposing) {
+              t.acc += Math.abs(m);
+              if (t.acc >= settings.ttThresh) {
+                t.dir = t.dir === IDX_TT_UP ? IDX_TT_DOWN : IDX_TT_UP;
+                t.acc = 0;
+              }
+            } else {
+              t.acc = 0;
+            }
+            t.x = touch.clientX;
+            t.y = touch.clientY;
+          }
+        }
+        for (const id of [...ttTouches.keys()]) {
+          if (!active.has(id)) ttTouches.delete(id);
+        }
+
+        state.fill(0);
+        for (const t of ttTouches.values()) state[t.dir] = 1;
+
+        // Keys: hit-test every touch not owned by the turntable, so sliding
+        // a finger between keys works.
+        for (const touch of e.touches) {
+          if (ttTouches.has(touch.identifier)) continue;
+          const el = document.elementFromPoint(touch.clientX, touch.clientY);
+          if (el && el.dataset && el.dataset.idx !== undefined) {
+            state[+el.dataset.idx] = 1;
+          }
+        }
+
+        render();
+        send();
+      };
+
+      for (const type of ["touchstart", "touchmove", "touchend", "touchcancel"]) {
+        document.addEventListener(type, handleTouches, { passive: false });
+      }
+      // Block iOS pinch / long-press gestures
+      document.addEventListener("gesturestart", (e) => e.preventDefault());
+      document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+      $("gear").addEventListener("click", () => $("settings").classList.toggle("open"));
+
+      const els = [...document.querySelectorAll("[data-idx]")];
+      const render = () => {
+        for (const el of els) el.classList.toggle("on", !!state[+el.dataset.idx]);
+        tt.classList.toggle("up", !!state[IDX_TT_UP]);
+        tt.classList.toggle("down", !!state[IDX_TT_DOWN] && !state[IDX_TT_UP]);
+        tt.style.setProperty("--tt-angle", ttAngle + "deg");
+      };
+
+      // ---- Websocket (same protocol as Brokenithm) ----
+      let ws = null;
+      let wsConnected = false;
+      let wsTimeout = 0;
+
+      const message = () => "b" + state.join("") + "0".repeat(N_AIR);
+
+      const send = (force) => {
+        if (!wsConnected) return;
+        const msg = message();
+        if (force || msg !== lastSent) {
+          ws.send(msg);
+          lastSent = msg;
+        }
+      };
+
+      const setStatus = (ok) => {
+        const s = $("status");
+        s.className = ok ? "ok" : "bad";
+        s.textContent = ok ? "연결됨" : "연결 중…";
+      };
+
+      const wsConnect = () => {
+        ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws");
+        ws.onopen = () => ws.send("alive?");
+        ws.onmessage = (e) => {
+          if (e.data === "alive") {
+            wsTimeout = 0;
+            if (!wsConnected) {
+              wsConnected = true;
+              setStatus(true);
+              send(true);
+            }
+          }
+        };
+        ws.onclose = () => {
+          wsConnected = false;
+          setStatus(false);
+        };
+      };
+
+      const wsWatch = () => {
+        if (wsTimeout++ > 2) {
+          wsTimeout = 0;
+          wsConnected = false;
+          setStatus(false);
+          try {
+            ws.close();
+          } catch (e) {}
+          wsConnect();
+          return;
+        }
+        if (wsConnected) {
+          ws.send("alive?");
+          // Periodic resend so a dropped packet can't leave a key stuck
+          send(true);
+        }
+      };
+
+      // Release everything if the page is hidden (app switch, lock screen)
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          ttTouches.clear();
+          state.fill(0);
+          render();
+          send(true);
+        }
+      });
+
+      wsConnect();
+      setInterval(wsWatch, 1000);
+    </script>
+  </body>
+</html>

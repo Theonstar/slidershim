@@ -203,10 +203,11 @@
           <option value="brokenithm">Brokenithm</option>
           <option value="brokenithm-led">Brokenithm + Led</option>
           <option value="brokenithm-nostalgia">Brokestalgia (28k)</option>
+          <option value="brokenithm-iidx">Brokenithm IIDX (Tablet)</option>
         </select>
       </div>
     </div>
-    {#if deviceMode.slice(0, 8) === "tasoller" || deviceMode.slice(0, 7) === "yuancon" || deviceMode.slice(0, 8) === "yubideck" || (deviceMode.slice(0, 10) === "brokenithm" && deviceMode !== "brokenithm-nostalgia")}
+    {#if deviceMode.slice(0, 8) === "tasoller" || deviceMode.slice(0, 7) === "yuancon" || deviceMode.slice(0, 8) === "yubideck" || (deviceMode.slice(0, 10) === "brokenithm" && deviceMode !== "brokenithm-nostalgia" && deviceMode !== "brokenithm-iidx")}
       <div class="row">
         <div class="label" />
         <div class="input">
@@ -315,6 +316,7 @@
           <option value="kb-4">Keyboard 4-zone, Linear</option>
           <option value="kb-voltex">Keyboard 10-zone, Voltex Layout</option>
           <option value="kb-neardayo">Keyboard 10-zone, Neardayo Layout</option>
+          <option value="kb-iidx">Keyboard IIDX Layout (for Brokenithm IIDX)</option>
           <option value="gamepad-voltex">XBOX 360 Gamepad, Voltex Layout</option
           >
           <option value="gamepad-neardayo"
@@ -328,7 +330,21 @@
         </select>
       </div>
     </div>
-    {#if deviceMode === "brokenithm-nostalgia" && outputMode !== "none" && outputMode.slice(0, 5) !== "kb-32"}
+    {#if deviceMode === "brokenithm-iidx" && outputMode !== "kb-iidx"}
+      <div class="row">
+        <div class="label" />
+        <div class="input comment">
+          Brokenithm IIDX requires the Keyboard IIDX Layout output mode
+        </div>
+      </div>
+    {:else if outputMode === "kb-iidx" && deviceMode !== "brokenithm-iidx"}
+      <div class="row">
+        <div class="label" />
+        <div class="input comment">
+          Keyboard IIDX Layout is meant for the Brokenithm IIDX controller
+        </div>
+      </div>
+    {:else if deviceMode === "brokenithm-nostalgia" && outputMode !== "none" && outputMode.slice(0, 5) !== "kb-32"}
       <div class="row">
         <div class="label" />
         <div class="input comment">
